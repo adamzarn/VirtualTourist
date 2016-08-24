@@ -76,13 +76,26 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     
     func mapView(mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         if control == view.rightCalloutAccessoryView {
-            let collectionView = storyboard?.instantiateViewControllerWithIdentifier("CollectionView") as! CollectionViewController
-            self.navigationController?.pushViewController(collectionView, animated: true)
+
+            let cv = storyboard?.instantiateViewControllerWithIdentifier("CollectionView") as! CollectionViewController
+            let pin = view.annotation!
+            cv.lat = pin.coordinate.latitude
+            cv.long = pin.coordinate.longitude
+            cv.myTitle = pin.title!
+            cv.mySubtitle = pin.subtitle!
+            
+            FlickrClient.sharedInstance().getFlickrImagesByLocation(pin.coordinate.latitude, long: pin.coordinate.longitude, completion: { (result, error) -> () in
+                if let result = result {
+                    let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+                    appDelegate.photos = result
+                    cv.collectionView.reloadData()
+                } else {
+                    print(error)
+                }
+            })
+            self.navigationController?.pushViewController(cv, animated: true)
         }
-        
     }
-
-
 
 }
 

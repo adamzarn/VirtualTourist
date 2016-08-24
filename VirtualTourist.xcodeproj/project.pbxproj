@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DB6531C51D6DF136005457B4 /* FlickrClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6531C41D6DF136005457B4 /* FlickrClient.swift */; };
+		DB6531C71D6DF2A8005457B4 /* GCDBlackBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6531C61D6DF2A8005457B4 /* GCDBlackBox.swift */; };
+		DB6531C91D6DFBDA005457B4 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6531C81D6DFBDA005457B4 /* Constants.swift */; };
+		DB6531CB1D6E2ACC005457B4 /* CustomCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6531CA1D6E2ACC005457B4 /* CustomCell.swift */; };
 		DBCAE6C11D6CC51200D1F6F0 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBCAE6C01D6CC51200D1F6F0 /* AppDelegate.swift */; };
 		DBCAE6C31D6CC51200D1F6F0 /* MapViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBCAE6C21D6CC51200D1F6F0 /* MapViewController.swift */; };
 		DBCAE6C61D6CC51200D1F6F0 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = DBCAE6C41D6CC51200D1F6F0 /* Main.storyboard */; };
@@ -37,6 +41,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		DB6531C41D6DF136005457B4 /* FlickrClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FlickrClient.swift; sourceTree = "<group>"; };
+		DB6531C61D6DF2A8005457B4 /* GCDBlackBox.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GCDBlackBox.swift; sourceTree = "<group>"; };
+		DB6531C81D6DFBDA005457B4 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		DB6531CA1D6E2ACC005457B4 /* CustomCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CustomCell.swift; sourceTree = "<group>"; };
 		DBCAE6BD1D6CC51100D1F6F0 /* VirtualTourist.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtualTourist.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DBCAE6C01D6CC51200D1F6F0 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		DBCAE6C21D6CC51200D1F6F0 /* MapViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapViewController.swift; sourceTree = "<group>"; };
@@ -106,13 +114,17 @@
 			isa = PBXGroup;
 			children = (
 				DBCAE6C01D6CC51200D1F6F0 /* AppDelegate.swift */,
+				DB6531C41D6DF136005457B4 /* FlickrClient.swift */,
+				DB6531C81D6DFBDA005457B4 /* Constants.swift */,
+				DBCAE6F51D6CDCBE00D1F6F0 /* CollectionViewController.swift */,
 				DBCAE6C21D6CC51200D1F6F0 /* MapViewController.swift */,
 				DBCAE6C41D6CC51200D1F6F0 /* Main.storyboard */,
 				DBCAE6CA1D6CC51200D1F6F0 /* Assets.xcassets */,
 				DBCAE6CC1D6CC51200D1F6F0 /* LaunchScreen.storyboard */,
 				DBCAE6CF1D6CC51200D1F6F0 /* Info.plist */,
 				DBCAE6C71D6CC51200D1F6F0 /* VirtualTourist.xcdatamodeld */,
-				DBCAE6F51D6CDCBE00D1F6F0 /* CollectionViewController.swift */,
+				DB6531C61D6DF2A8005457B4 /* GCDBlackBox.swift */,
+				DB6531CA1D6E2ACC005457B4 /* CustomCell.swift */,
 			);
 			path = VirtualTourist;
 			sourceTree = "<group>";
@@ -267,8 +279,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				DBCAE6F61D6CDCBE00D1F6F0 /* CollectionViewController.swift in Sources */,
+				DB6531C51D6DF136005457B4 /* FlickrClient.swift in Sources */,
 				DBCAE6C31D6CC51200D1F6F0 /* MapViewController.swift in Sources */,
 				DBCAE6C11D6CC51200D1F6F0 /* AppDelegate.swift in Sources */,
+				DB6531C91D6DFBDA005457B4 /* Constants.swift in Sources */,
+				DB6531C71D6DF2A8005457B4 /* GCDBlackBox.swift in Sources */,
+				DB6531CB1D6E2ACC005457B4 /* CustomCell.swift in Sources */,
 				DBCAE6C91D6CC51200D1F6F0 /* VirtualTourist.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -494,6 +510,7 @@
 				DBCAE6EA1D6CC51200D1F6F0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		DBCAE6EB1D6CC51200D1F6F0 /* Build configuration list for PBXNativeTarget "VirtualTouristTests" */ = {
 			isa = XCConfigurationList;
@@ -502,6 +519,7 @@
 				DBCAE6ED1D6CC51200D1F6F0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		DBCAE6EE1D6CC51200D1F6F0 /* Build configuration list for PBXNativeTarget "VirtualTouristUITests" */ = {
 			isa = XCConfigurationList;
@@ -510,6 +528,7 @@
 				DBCAE6F01D6CC51200D1F6F0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 
