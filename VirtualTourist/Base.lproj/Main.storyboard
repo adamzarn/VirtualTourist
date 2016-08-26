@@ -24,21 +24,65 @@
                                     <outlet property="delegate" destination="BYZ-38-t0r" id="2Fv-l1-Z5v"/>
                                 </connections>
                             </mapView>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="dQM-0h-BBI">
+                                <rect key="frame" x="0.0" y="545" width="600" height="55"/>
+                                <subviews>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Tap Pins to Delete" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="gX8-S8-B4M">
+                                        <rect key="frame" x="230" y="17" width="140" height="21"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="140" id="wqU-De-0cE"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                        <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                </subviews>
+                                <color key="backgroundColor" red="1" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                                <constraints>
+                                    <constraint firstItem="gX8-S8-B4M" firstAttribute="centerY" secondItem="dQM-0h-BBI" secondAttribute="centerY" id="BxR-Jl-XaZ"/>
+                                    <constraint firstItem="gX8-S8-B4M" firstAttribute="centerX" secondItem="dQM-0h-BBI" secondAttribute="centerX" id="E3A-AO-sLU"/>
+                                    <constraint firstAttribute="height" constant="55" id="XJc-1a-dBi"/>
+                                    <constraint firstItem="gX8-S8-B4M" firstAttribute="centerX" secondItem="dQM-0h-BBI" secondAttribute="centerX" id="sSV-fB-PV5"/>
+                                    <constraint firstItem="gX8-S8-B4M" firstAttribute="centerY" secondItem="dQM-0h-BBI" secondAttribute="centerY" id="zSd-fw-Afa"/>
+                                </constraints>
+                                <variation key="default">
+                                    <mask key="constraints">
+                                        <exclude reference="BxR-Jl-XaZ"/>
+                                        <exclude reference="E3A-AO-sLU"/>
+                                    </mask>
+                                </variation>
+                            </view>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                         <constraints>
+                            <constraint firstItem="dQM-0h-BBI" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leadingMargin" constant="-20" id="Ahx-8l-ZGd"/>
+                            <constraint firstItem="dQM-0h-BBI" firstAttribute="top" secondItem="y3c-jy-aDJ" secondAttribute="bottom" constant="481" id="Sbc-rX-V4i"/>
                             <constraint firstItem="e94-wp-FMv" firstAttribute="top" secondItem="8bC-Xf-vdC" secondAttribute="topMargin" id="SvS-2R-eN5"/>
                             <constraint firstItem="wfy-db-euE" firstAttribute="top" secondItem="e94-wp-FMv" secondAttribute="bottom" id="blo-AG-heu"/>
                             <constraint firstItem="e94-wp-FMv" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leadingMargin" constant="-20" id="eY1-WM-UMP"/>
+                            <constraint firstItem="wfy-db-euE" firstAttribute="top" secondItem="dQM-0h-BBI" secondAttribute="bottom" id="hgT-kR-7Du"/>
                             <constraint firstAttribute="trailingMargin" secondItem="e94-wp-FMv" secondAttribute="trailing" constant="-20" id="rDU-cx-fDf"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="dQM-0h-BBI" secondAttribute="trailing" constant="-20" id="uT6-Gh-wSx"/>
                         </constraints>
+                        <variation key="default">
+                            <mask key="constraints">
+                                <exclude reference="Sbc-rX-V4i"/>
+                            </mask>
+                        </variation>
                     </view>
                     <navigationItem key="navigationItem" title="Virtual Tourist" id="aCG-Qn-0VZ">
                         <barButtonItem key="backBarButtonItem" title="OK" id="n4e-dL-XwN"/>
-                        <barButtonItem key="rightBarButtonItem" systemItem="edit" id="XfO-6d-zyT"/>
+                        <barButtonItem key="rightBarButtonItem" title="Edit" id="XfO-6d-zyT">
+                            <connections>
+                                <action selector="editButtonPressed:" destination="BYZ-38-t0r" id="ug5-3s-Oxi"/>
+                            </connections>
+                        </barButtonItem>
                     </navigationItem>
                     <connections>
+                        <outlet property="editButton" destination="XfO-6d-zyT" id="sHs-Su-lkb"/>
+                        <outlet property="myBottomView" destination="dQM-0h-BBI" id="MEp-tB-BxE"/>
                         <outlet property="myMapView" destination="e94-wp-FMv" id="479-l0-nLh"/>
+                        <outlet property="navItem" destination="aCG-Qn-0VZ" id="GLA-uh-k4I"/>
                         <segue destination="Sjb-K1-EZ8" kind="push" id="CD6-nl-JqA"/>
                     </connections>
                 </viewController>

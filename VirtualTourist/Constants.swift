@@ -37,6 +37,7 @@ struct Constants {
         static let PhotosForLocationMethod = "flickr.photos.search"
         static let GalleryID = "5704-72157622566655097"
         static let MediumURL = "url_m"
+        static let PerPage = "21"
     }
     
     // MARK: Flickr Response Keys

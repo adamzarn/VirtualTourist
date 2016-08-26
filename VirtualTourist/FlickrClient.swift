@@ -8,8 +8,11 @@
 
 import UIKit
 import MapKit
+import CoreData
 
 class FlickrClient: NSObject {
+    
+    var pins = [Pin]()
     
     func getFlickrImagesByLocation(lat: CLLocationDegrees, long: CLLocationDegrees, completion: (result: NSArray?, error: NSError?) -> Void) -> NSURLSessionDataTask {
         
@@ -22,6 +25,7 @@ class FlickrClient: NSObject {
             ,Constants.FlickrParameterKeys.Extras: Constants.FlickrParameterValues.MediumURL
             ,Constants.FlickrParameterKeys.Format: Constants.FlickrParameterValues.ResponseFormat
             ,Constants.FlickrParameterKeys.NoJSONCallback: Constants.FlickrParameterValues.DisableJSONCallback
+            ,Constants.FlickrParameterKeys.PerPage: Constants.FlickrParameterValues.PerPage
         ]
         
         let urlString = Constants.Flickr.APIBaseURL + escapedParameters(methodParameters)
@@ -57,15 +61,51 @@ class FlickrClient: NSObject {
                 print("error")
                 return
             }
-            if let firstPhotosRequest = parsedResult as? [String:AnyObject], let photos = firstPhotosRequest["photos"] as? [String:AnyObject], let photo = photos["photo"] as? NSArray {
+            if let photos1 = parsedResult as? [String:AnyObject], let photos2 = photos1["photos"] as? [String:AnyObject], let photos = photos2["photo"] as? NSArray {
                     performUIUpdatesOnMain {
-                        completion(result: photo, error: nil)
+                        
+                        let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+                        let context = appDelegate.managedObjectContext
+                        
+                        let correctPin = self.getPinAtLocation(lat,long: long)
+                        
+                        for photo in photos {
+                            let newPhoto = NSEntityDescription.insertNewObjectForEntityForName("Photo",inManagedObjectContext: context) as! Photo
+                            if let imageUrlString = photo[Constants.FlickrResponseKeys.MediumURL] as? String {
+                                let imageURL = NSURL(string: imageUrlString)
+                                if let imageData = NSData(contentsOfURL: imageURL!) {
+                                    newPhoto.image = imageData
+                                    newPhoto.photoToPin = correctPin
+                                }
+                            }
+                        completion(result: photos, error: nil)
+                    }
                 }
             }
         }
         task.resume()
         return task
     }
+    
+    func getPinAtLocation(lat: Double, long: Double) -> Pin {
+        let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+        let context = appDelegate.managedObjectContext
+        let fetchRequest = NSFetchRequest(entityName: "Pin")
+        do {
+            let results = try context.executeFetchRequest(fetchRequest)
+            pins = results as! [Pin]
+        } catch let error as NSError {
+            print("Could not fetch \(error), \(error.userInfo)")
+        }
+        
+        for pin in pins {
+            if lat == pin.lat && long == pin.long {
+                return pin
+            }
+        }
+        return pins[0]
+    }
+    
     
     private func escapedParameters(parameters: [String:AnyObject]) -> String {
         
