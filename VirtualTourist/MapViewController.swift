@@ -10,7 +10,7 @@ import UIKit
 import MapKit
 import CoreData
 
-class MapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsControllerDelegate {
+class MapViewController: UIViewController, MKMapViewDelegate {
     
     @IBOutlet weak var myMapView: MKMapView!
     @IBOutlet weak var myBottomView: UIView!
@@ -19,7 +19,7 @@ class MapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsCo
     
     let longPress = UILongPressGestureRecognizer()
     var pins = [NSManagedObject]()
-    var fetchedResultsController: NSFetchedResultsController!
+    var pinsForDeletion = [Pin]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,16 +28,12 @@ class MapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsCo
         myMapView.addGestureRecognizer(longPress)
         
         let defaults = NSUserDefaults.standardUserDefaults()
-        if  let lat = defaults.valueForKey("lat"),
-            let long = defaults.valueForKey("long"),
-            let latDelta = defaults.valueForKey("latDelta"),
-            let longDelta = defaults.valueForKey("longDelta")
-        
-        {
-            let center: CLLocationCoordinate2D = CLLocationCoordinate2DMake(lat as! Double, long as! Double)
-            let span: MKCoordinateSpan = MKCoordinateSpanMake(latDelta as! Double, longDelta as! Double)
+        if let location = defaults.dictionaryForKey("location") {
+            let center: CLLocationCoordinate2D = CLLocationCoordinate2DMake(location["lat"] as! Double, location["long"] as! Double)
+            let span: MKCoordinateSpan = MKCoordinateSpanMake(location["latDelta"] as! Double, location["longDelta"] as! Double)
             let region: MKCoordinateRegion = MKCoordinateRegionMake(center, span)
             myMapView.setRegion(region, animated: true)
+            print(location)
         }
         
         myBottomView.hidden = true
@@ -72,6 +68,12 @@ class MapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsCo
         let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
         let context = appDelegate.managedObjectContext
         
+        print(myMapView.centerCoordinate.latitude)
+        print(myMapView.centerCoordinate.longitude)
+        print(myMapView.region.span.latitudeDelta)
+        print(myMapView.region.span.longitudeDelta)
+
+        
         let touchPoint = sender.locationInView(myMapView)
         let newCoordinates = myMapView.convertPoint(touchPoint, toCoordinateFromView: myMapView)
         
@@ -79,26 +81,17 @@ class MapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsCo
         newPin.lat = newCoordinates.latitude
         newPin.long = newCoordinates.longitude
         
+        FlickrClient.sharedInstance().getFlickrImagesByLocation(newPin.lat as! Double, long: newPin.long as! Double, pin: newPin, page: 1, completion: { (result, error) -> () in
+            if let result = result {
+            } else {
+                print(error)
+            }
+        })
+
         appDelegate.saveContext()
         
-        let geoCoder = CLGeocoder()
-        let location = CLLocation(latitude: newCoordinates.latitude, longitude: newCoordinates.longitude)
+        self.setUpMapView()
         
-        geoCoder.reverseGeocodeLocation(location, completionHandler: { (placemarks, error) -> Void in
-            
-            var placeMark: CLPlacemark!
-            placeMark = placemarks?[0]
-
-            if let locationName = placeMark.addressDictionary!["Name"] as? NSString, let city = placeMark.addressDictionary!["City"] as? NSString, let state = placeMark.addressDictionary!["State"] as? NSString, let zip = placeMark.addressDictionary!["ZIP"] as? NSString {
-                let newAnnotation = MKPointAnnotation()
-                newAnnotation.coordinate = CLLocationCoordinate2D(latitude: newCoordinates.latitude, longitude: newCoordinates.longitude)
-                newAnnotation.title = locationName as String
-                newAnnotation.subtitle = (city as String) + ", " + (state as String) + " " + (zip as String)
-                self.myMapView.addAnnotation(newAnnotation)
-
-            }
-        
-        })
     }
     
     func setUpMapView() {
@@ -124,8 +117,8 @@ class MapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsCo
                 
                 let annotation = MKPointAnnotation()
                 annotation.coordinate = coordinate
-                annotation.title = ""
-                annotation.subtitle = ""
+                annotation.title = "Title"
+                annotation.subtitle = "Subtitle"
                 
                 annotations.append(annotation)
             }
@@ -143,7 +136,7 @@ class MapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsCo
         
         if pinView == nil {
             pinView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: reuseId)
-            pinView!.canShowCallout = true
+            pinView!.canShowCallout = false
             pinView!.pinTintColor = .redColor()
             pinView!.rightCalloutAccessoryView = UIButton(type: .DetailDisclosure)
         } else {
@@ -153,42 +146,53 @@ class MapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsCo
         
     }
     
-    func mapView(mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
-        if control == view.rightCalloutAccessoryView {
-
-            let cv = storyboard?.instantiateViewControllerWithIdentifier("CollectionView") as! CollectionViewController
-            let pin = view.annotation!
+    func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
+        
+        let cv = storyboard?.instantiateViewControllerWithIdentifier("CollectionView") as! CollectionViewController
+        let pin = view.annotation!
+        
+        if self.navItem.rightBarButtonItem!.style == UIBarButtonItemStyle.Done {
+            mapView.removeAnnotation(view.annotation!)
+            deletePin(pin.coordinate.latitude, long: pin.coordinate.longitude)
+            
+        } else {
             cv.lat = pin.coordinate.latitude
             cv.long = pin.coordinate.longitude
             cv.myTitle = pin.title!
             cv.mySubtitle = pin.subtitle!
             
-            FlickrClient.sharedInstance().getFlickrImagesByLocation(pin.coordinate.latitude, long: pin.coordinate.longitude, completion: { (result, error) -> () in
-                if let result = result {
-                    let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
-                    appDelegate.photos = result
-                    cv.collectionView.reloadData()
-                } else {
-                    print(error)
-                }
-            })
             self.navigationController?.pushViewController(cv, animated: true)
         }
     }
     
-    func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
-        if self.navItem.rightBarButtonItem!.style == UIBarButtonItemStyle.Done {
-            mapView.removeAnnotation(view.annotation!)
+    func deletePin(lat: Double, long: Double) {
+        let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+        let context = appDelegate.managedObjectContext
+        let fetchRequest = NSFetchRequest(entityName: "Pin")
+        
+        do {
+            let results = try context.executeFetchRequest(fetchRequest)
+            pinsForDeletion = results as! [Pin]
+        } catch let error as NSError {
+            print("Could not fetch \(error), \(error.userInfo)")
+        }
+        
+        for pinToDelete in pinsForDeletion {
+            if pinToDelete.lat as! Double == lat && pinToDelete.long as! Double == long {
+                context.deleteObject(pinToDelete)
+            }
         }
     }
     
-    func mapView(mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+    override func viewWillDisappear(animated: Bool) {
         let defaults = NSUserDefaults.standardUserDefaults()
-        defaults.setValue(myMapView.centerCoordinate.latitude, forKey: "lat")
-        defaults.setValue(myMapView.centerCoordinate.longitude, forKey: "long")
-        defaults.setValue(myMapView.region.span.latitudeDelta, forKey: "latDelta")
-        defaults.setValue(myMapView.region.span.longitudeDelta, forKey: "longDelta")
+        let locationData = ["lat":myMapView.centerCoordinate.latitude
+            , "long":myMapView.centerCoordinate.longitude
+            , "latDelta":myMapView.region.span.latitudeDelta
+            , "longDelta":myMapView.region.span.longitudeDelta]
+        defaults.setObject(locationData, forKey: "location")
     }
+
 
 }
 

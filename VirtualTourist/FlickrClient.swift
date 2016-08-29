@@ -14,7 +14,7 @@ class FlickrClient: NSObject {
     
     var pins = [Pin]()
     
-    func getFlickrImagesByLocation(lat: CLLocationDegrees, long: CLLocationDegrees, completion: (result: NSArray?, error: NSError?) -> Void) -> NSURLSessionDataTask {
+    func getFlickrImagesByLocation(lat: CLLocationDegrees, long: CLLocationDegrees, pin: Pin, page: Int, completion: (result: NSArray?, error: NSError?) -> Void) -> NSURLSessionDataTask {
         
         let methodParameters = [
             Constants.FlickrParameterKeys.Method: Constants.FlickrParameterValues.PhotosForLocationMethod
@@ -26,6 +26,7 @@ class FlickrClient: NSObject {
             ,Constants.FlickrParameterKeys.Format: Constants.FlickrParameterValues.ResponseFormat
             ,Constants.FlickrParameterKeys.NoJSONCallback: Constants.FlickrParameterValues.DisableJSONCallback
             ,Constants.FlickrParameterKeys.PerPage: Constants.FlickrParameterValues.PerPage
+            ,Constants.FlickrParameterKeys.Page: "\(page)"
         ]
         
         let urlString = Constants.Flickr.APIBaseURL + escapedParameters(methodParameters)
@@ -67,15 +68,13 @@ class FlickrClient: NSObject {
                         let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
                         let context = appDelegate.managedObjectContext
                         
-                        let correctPin = self.getPinAtLocation(lat,long: long)
-                        
                         for photo in photos {
                             let newPhoto = NSEntityDescription.insertNewObjectForEntityForName("Photo",inManagedObjectContext: context) as! Photo
                             if let imageUrlString = photo[Constants.FlickrResponseKeys.MediumURL] as? String {
                                 let imageURL = NSURL(string: imageUrlString)
                                 if let imageData = NSData(contentsOfURL: imageURL!) {
                                     newPhoto.image = imageData
-                                    newPhoto.photoToPin = correctPin
+                                    newPhoto.photoToPin = pin
                                 }
                             }
                         completion(result: photos, error: nil)
@@ -85,25 +84,6 @@ class FlickrClient: NSObject {
         }
         task.resume()
         return task
-    }
-    
-    func getPinAtLocation(lat: Double, long: Double) -> Pin {
-        let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
-        let context = appDelegate.managedObjectContext
-        let fetchRequest = NSFetchRequest(entityName: "Pin")
-        do {
-            let results = try context.executeFetchRequest(fetchRequest)
-            pins = results as! [Pin]
-        } catch let error as NSError {
-            print("Could not fetch \(error), \(error.userInfo)")
-        }
-        
-        for pin in pins {
-            if lat == pin.lat && long == pin.long {
-                return pin
-            }
-        }
-        return pins[0]
     }
     
     

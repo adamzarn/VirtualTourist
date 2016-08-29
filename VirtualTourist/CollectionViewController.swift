@@ -6,18 +6,27 @@
 //  Copyright © 2016 Adam Zarn. All rights reserved.
 //
 
-import Foundation
+import CoreData
 import UIKit
 import MapKit
 
 class CollectionViewController: UIViewController, MKMapViewDelegate, UICollectionViewDataSource, UICollectionViewDelegate {
     
     @IBOutlet weak var singlePointMapView: MKMapView!
+    @IBOutlet weak var noImagesLabel: UILabel!
     
     var lat: CLLocationDegrees?
     var long: CLLocationDegrees?
     var myTitle: String?
     var mySubtitle: String?
+    
+    @IBOutlet weak var bottomButton: UIBarButtonItem!
+    
+    var pins = [Pin]()
+    var imagesForPin = [NSManagedObject]()
+    var correctPin = Pin?()
+    var pageNumber = 1
+    var indexPathsToDelete = [Int]()
     
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var flowLayout: UICollectionViewFlowLayout!
@@ -36,12 +45,69 @@ class CollectionViewController: UIViewController, MKMapViewDelegate, UICollectio
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         collectionView.backgroundColor = UIColor.whiteColor()
-        collectionView?.reloadData()
+        noImagesLabel.hidden = true
+        
+        getCorrectPin(self.lat!, long: self.long!)
+        getImages()
+        setUpCollectionView()
+ 
     }
     
     override func viewDidAppear(animated: Bool) {
         self.setUpMapView()
     }
+    
+    func setUpCollectionView() {
+        if imagesForPin.count == 0 {
+            collectionView.hidden = true
+            noImagesLabel.hidden = false
+        } else {
+            noImagesLabel.hidden = true
+            collectionView?.reloadData()
+            collectionView.hidden = false
+        }
+    }
+    
+    func getCorrectPin(lat: Double, long: Double) {
+        let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+        let context = appDelegate.managedObjectContext
+        let fetchRequest = NSFetchRequest(entityName: "Pin")
+        
+        do {
+            let results = try context.executeFetchRequest(fetchRequest)
+            pins = results as! [Pin]
+        } catch let error as NSError {
+            print("Could not fetch \(error), \(error.userInfo)")
+        }
+        
+        for pin in pins {
+            if pin.lat as! Double == lat && pin.long as! Double == long {
+                correctPin = pin
+            }
+        }
+    }
+    
+    func getImages() {
+        let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+        let context = appDelegate.managedObjectContext
+        let fetchRequest = NSFetchRequest(entityName: "Photo")
+    
+        if let correctPin = correctPin {
+            let p = NSPredicate(format: "photoToPin = %@", argumentArray: [correctPin])
+            fetchRequest.predicate = p
+        
+            imagesForPin = []
+            do {
+                let results = try context.executeFetchRequest(fetchRequest)
+                imagesForPin = results as! [NSManagedObject]
+            } catch let error as NSError {
+                print("Could not fetch \(error), \(error.userInfo)")
+            }
+        } else {
+        print("Predicate didn't work")
+        }
+    }
+
     
     func setUpMapView() {
         
@@ -76,30 +142,85 @@ class CollectionViewController: UIViewController, MKMapViewDelegate, UICollectio
     }
     
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
-        return appDelegate.photos.count
+        return imagesForPin.count
     }
     
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         
-        let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
-        
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier("Cell", forIndexPath: indexPath) as! CustomCell
+        cell.myImageView!.alpha = 1.0
         
-        if appDelegate.photos.count != 0 {
+        cell.activityIndicator.hidden = false
         
-        let photo = appDelegate.photos[indexPath.row]
-            if let imageUrlString = photo[Constants.FlickrResponseKeys.MediumURL] as? String {
-                let imageURL = NSURL(string: imageUrlString)
-                if let imageData = NSData(contentsOfURL: imageURL!) {
-                    cell.myImageView!.image = UIImage(data: imageData)
-                }
+        if imagesForPin.count != 0 {
+            
+            if let photoData = imagesForPin[indexPath.row].valueForKey("image") {
+                cell.myImageView!.image = UIImage(data: photoData as! NSData)
             }
+            
         }
         
         return cell
     }
-
     
+    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+        let cell = collectionView.cellForItemAtIndexPath(indexPath) as! CustomCell
+        if cell.myImageView!.alpha < 1.0 {
+            cell.myImageView!.alpha = 1.0
+            let index = indexPathsToDelete.indexOf(indexPath.row)
+            indexPathsToDelete.removeAtIndex(index!)
+            if indexPathsToDelete.count == 0 {
+                bottomButton.title = "New Collection"
+            }
+        } else {
+            cell.myImageView!.alpha = 0.25
+            indexPathsToDelete.append(indexPath.row)
+            if indexPathsToDelete.count == 1 {
+                bottomButton.title = "Remove Selected Pictures"
+            }
+        }
+        indexPathsToDelete = indexPathsToDelete.sort { return $1 < $0 }
+    }
+    
+    @IBAction func newCollectionRequested(sender: AnyObject) {
+        
+        let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+        let context = appDelegate.managedObjectContext
+        
+        if bottomButton.title == "New Collection" {
+            if imagesForPin.count == 21 {
+                pageNumber += 1
+            } else {
+                pageNumber = 1
+                self.collectionView.hidden = false
+            }
+
+            for image in imagesForPin {
+                context.deleteObject(image as NSManagedObject)
+            }
+            appDelegate.saveContext()
+            self.getImages()
+            self.collectionView.reloadData()
+            FlickrClient.sharedInstance().getFlickrImagesByLocation(correctPin!.lat as! Double, long: correctPin!.long as! Double, pin: correctPin!, page: pageNumber, completion: { (result, error) -> () in
+                if let result = result {
+                    self.getImages()
+                    self.setUpCollectionView()
+                } else {
+                    print(error)
+                }
+            })
+        } else {
+            for i in indexPathsToDelete {
+                let photo = imagesForPin[i]
+                context.deleteObject(photo as NSManagedObject)
+                appDelegate.saveContext()
+                imagesForPin.removeAtIndex(i)
+                self.setUpCollectionView()
+            }
+            bottomButton.title = "New Collection"
+            indexPathsToDelete = []
+        }
+        
+    }
     
 }
