@@ -158,6 +158,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
             cv.mySubtitle = pin.subtitle!
             
             self.navigationController?.pushViewController(cv, animated: true)
+            myMapView.deselectAnnotation(view.annotation!, animated: false)
         }
     }
     

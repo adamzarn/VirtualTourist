@@ -229,6 +229,7 @@ extension CollectionViewController {
         
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier("Cell", forIndexPath: indexPath) as! CustomCell
         cell.activityIndicator.color = UIColor.whiteColor()
+        cell.myImageView!.alpha = 1.0
         
         if let imageData = photosForPin[indexPath.row].valueForKey("image") {
             
@@ -237,7 +238,6 @@ extension CollectionViewController {
             
         } else if photosForPin.count != 0 {
             
-            cell.myImageView!.alpha = 1.0
             cell.myImageView.backgroundColor = UIColor.grayColor()
             cell.myImageView.image = nil
             cell.activityIndicator.hidden = false
