@@ -12,8 +12,6 @@ import CoreData
 
 class FlickrClient: NSObject {
     
-    var pins = [Pin]()
-    
     func getFlickrImagesByLocation(lat: CLLocationDegrees, long: CLLocationDegrees, pin: Pin, page: Int, completion: (result: NSArray?, error: NSError?) -> Void) -> NSURLSessionDataTask {
         
         let methodParameters = [
@@ -55,6 +53,7 @@ class FlickrClient: NSObject {
                 sendError("No data was returned by the request!")
                 return
             }
+            
             var parsedResult: AnyObject!
             do {
                 parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
@@ -81,7 +80,45 @@ class FlickrClient: NSObject {
         return task
     }
     
+    func getImageData(urlString: String, completion: (result: NSData?, error: NSError?) -> Void) -> NSURLSessionDataTask {
     
+        let url = NSURL(string: urlString)!
+        let request = NSURLRequest(URL: url)
+        let session = NSURLSession.sharedSession()
+        let task = session.dataTaskWithRequest(request) { (data, response, error) in
+        
+            guard (error == nil) else {
+                print("There was an error with your request: \(error)")
+                completion(result: nil, error: error)
+                return
+            }
+        
+            guard let statusCode = (response as? NSHTTPURLResponse)?.statusCode where statusCode >= 200 && statusCode <= 299 else {
+                print("Your request returned a status code other than 2xx!")
+                completion(result: nil, error: error)
+                return
+            }
+        
+            guard let data = data else {
+                print("No data was returned by the request!")
+                completion(result: nil, error: error)
+                return
+            }
+        
+            if let data = data as NSData? {
+                performUIUpdatesOnMain {
+                    completion(result: data, error: nil)
+                }
+            } else {
+                completion(result: nil, error: error)
+                }
+        }
+        task.resume()
+        return task
+    }
+
+
+
     private func escapedParameters(parameters: [String:AnyObject]) -> String {
         
         if parameters.isEmpty {
@@ -105,13 +142,10 @@ class FlickrClient: NSObject {
             return "?\(keyValuePairs.joinWithSeparator("&"))"
         }
     }
-
-
-    class func sharedInstance() -> FlickrClient {
-        struct Singleton {
-            static var sharedInstance = FlickrClient()
-        }
-        return Singleton.sharedInstance
+    
+    static let sharedInstance = FlickrClient()
+    private override init() {
+        super.init()
     }
 
 }

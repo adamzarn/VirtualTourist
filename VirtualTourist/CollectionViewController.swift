@@ -187,17 +187,17 @@ class CollectionViewController: UIViewController, MKMapViewDelegate, UICollectio
                 pageNumber = 1
             }
             
-            photosForPin.removeAll()
             for photo in photosForPin {
                 context.deleteObject(photo)
             }
+            photosForPin = []
             
             appDelegate.saveContext()
  
             self.noImagesLabel.hidden = true
             self.collectionView.hidden = true
             
-            FlickrClient.sharedInstance().getFlickrImagesByLocation(correctPin!.lat as! Double, long: correctPin!.long as! Double, pin: correctPin!, page: pageNumber, completion: { (result, error) -> () in
+            FlickrClient.sharedInstance.getFlickrImagesByLocation(correctPin!.lat as! Double, long: correctPin!.long as! Double, pin: correctPin!, page: pageNumber, completion: { (result, error) -> () in
                 if let result = result {
                     self.getPhotoURLs()
                     self.setUpCollectionView()
@@ -242,44 +242,25 @@ extension CollectionViewController {
             cell.myImageView.image = nil
             cell.activityIndicator.hidden = false
             cell.activityIndicator.startAnimating()
-
+            
             let urlString = photosForPin[indexPath.row].valueForKey("imageURL") as! String
             
-            let url = NSURL(string: urlString)!
-            let request = NSURLRequest(URL: url)
-            let task = appDelegate.sharedSession.dataTaskWithRequest(request) { (data, response, error) in
+            FlickrClient.sharedInstance.getImageData(urlString, completion: { (result, error) -> () in
+                self.stopLoading(cell.activityIndicator)
                 
-                guard (error == nil) else {
-                    print("There was an error with your request: \(error)")
-                    self.stopLoading(cell.activityIndicator)
-                    return
+                if let result = result {
+                    cell.myImageView!.image = UIImage(data: result)
+                    self.photosForPin[indexPath.row].setValue(result, forKey: "image")
+                    self.appDelegate.saveContext()
                 }
                 
-                guard let statusCode = (response as? NSHTTPURLResponse)?.statusCode where statusCode >= 200 && statusCode <= 299 else {
-                    print("Your request returned a status code other than 2xx!")
-                    self.stopLoading(cell.activityIndicator)
-                    return
-                }
-                
-                guard let data = data else {
-                    print("No data was returned by the request!")
-                    self.stopLoading(cell.activityIndicator)
-                    return
-                }
-                
-                if let image = UIImage(data: data) {
-                    performUIUpdatesOnMain {
-                        cell.myImageView!.image = image
-                        self.photosForPin[indexPath.row].setValue(data, forKey: "image")
-                        self.appDelegate.saveContext()
-                        self.stopLoading(cell.activityIndicator)
-                    }
-                } else {
-                    print("Could not create image from \(data)")
-                }
-            }
-            task.resume()
+            })
         }
         return cell
     }
 }
+
+
+
+
+

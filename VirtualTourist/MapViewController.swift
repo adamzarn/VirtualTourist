@@ -42,11 +42,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         self.setUpMapView()
 
     }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
     
     @IBAction func editButtonPressed(sender: UIBarButtonItem) {
 
@@ -66,43 +61,27 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     
     func dropPin(sender: UILongPressGestureRecognizer) {
         
-        let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
-        let context = appDelegate.managedObjectContext
-        let fetchRequest = NSFetchRequest(entityName: "Pin")
+        if sender.state == .Began {
+            
+            let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+            let context = appDelegate.managedObjectContext
         
-        var noPinAlreadyExists = true
-        
-        do {
-            let results = try context.executeFetchRequest(fetchRequest)
-            existingPins = results as! [Pin]
-        } catch let error as NSError {
-            print("Could not fetch \(error), \(error.userInfo)")
-        }
-        
-        let touchPoint = sender.locationInView(myMapView)
-        let newCoordinates = myMapView.convertPoint(touchPoint, toCoordinateFromView: myMapView)
-        
-        for pin in existingPins {
-            if pin.lat as! CLLocationDegrees == newCoordinates.latitude && pin.long as! CLLocationDegrees == newCoordinates.longitude {
-                noPinAlreadyExists = false
-            }
-        }
-        
-        if noPinAlreadyExists {
-        
+            let touchPoint = sender.locationInView(myMapView)
+            let newCoordinates = myMapView.convertPoint(touchPoint, toCoordinateFromView: myMapView)
+
             let newPin = NSEntityDescription.insertNewObjectForEntityForName("Pin", inManagedObjectContext: context) as! Pin
             newPin.lat = newCoordinates.latitude
             newPin.long = newCoordinates.longitude
         
-            FlickrClient.sharedInstance().getFlickrImagesByLocation(newPin.lat as! Double, long: newPin.long as! Double, pin: newPin, page: 1, completion: { (result, error) -> () in
+            FlickrClient.sharedInstance.getFlickrImagesByLocation(newPin.lat as! Double, long: newPin.long as! Double, pin: newPin, page: 1, completion: { (result, error) -> () in
                 if let result = result {
                 } else {
                 print(error)
                 }
             })
 
-        appDelegate.saveContext()
-        self.setUpMapView()
+            appDelegate.saveContext()
+            self.setUpMapView()
             
         }
         
