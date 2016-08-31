@@ -18,28 +18,29 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     @IBOutlet weak var navItem: UINavigationItem!
     
     let longPress = UILongPressGestureRecognizer()
-    var pins = [NSManagedObject]()
+    var pins = [Pin]()
     var pinsForDeletion = [Pin]()
+    var existingPins = [Pin]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        
         let longPress = UILongPressGestureRecognizer(target: self, action: #selector(MapViewController.dropPin(_:)))
         myMapView.addGestureRecognizer(longPress)
         
         let defaults = NSUserDefaults.standardUserDefaults()
         if let location = defaults.dictionaryForKey("location") {
             let center: CLLocationCoordinate2D = CLLocationCoordinate2DMake(location["lat"] as! Double, location["long"] as! Double)
-            let span: MKCoordinateSpan = MKCoordinateSpanMake(location["latDelta"] as! Double, location["longDelta"] as! Double)
+            let span: MKCoordinateSpan = MKCoordinateSpanMake(location["latDelta"] as! Double * 0.9, location["longDelta"] as! Double * 0.9)
             let region: MKCoordinateRegion = MKCoordinateRegionMake(center, span)
             myMapView.setRegion(region, animated: true)
-            print(location)
+            myMapView.setCenterCoordinate(center, animated: false)
         }
         
         myBottomView.hidden = true
-        
         self.setUpMapView()
-        
+
     }
 
     override func didReceiveMemoryWarning() {
@@ -67,41 +68,55 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         
         let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
         let context = appDelegate.managedObjectContext
+        let fetchRequest = NSFetchRequest(entityName: "Pin")
         
-        print(myMapView.centerCoordinate.latitude)
-        print(myMapView.centerCoordinate.longitude)
-        print(myMapView.region.span.latitudeDelta)
-        print(myMapView.region.span.longitudeDelta)
-
+        var noPinAlreadyExists = true
+        
+        do {
+            let results = try context.executeFetchRequest(fetchRequest)
+            existingPins = results as! [Pin]
+        } catch let error as NSError {
+            print("Could not fetch \(error), \(error.userInfo)")
+        }
         
         let touchPoint = sender.locationInView(myMapView)
         let newCoordinates = myMapView.convertPoint(touchPoint, toCoordinateFromView: myMapView)
         
-        let newPin = NSEntityDescription.insertNewObjectForEntityForName("Pin", inManagedObjectContext: context) as! Pin
-        newPin.lat = newCoordinates.latitude
-        newPin.long = newCoordinates.longitude
-        
-        FlickrClient.sharedInstance().getFlickrImagesByLocation(newPin.lat as! Double, long: newPin.long as! Double, pin: newPin, page: 1, completion: { (result, error) -> () in
-            if let result = result {
-            } else {
-                print(error)
+        for pin in existingPins {
+            if pin.lat as! CLLocationDegrees == newCoordinates.latitude && pin.long as! CLLocationDegrees == newCoordinates.longitude {
+                noPinAlreadyExists = false
             }
-        })
+        }
+        
+        if noPinAlreadyExists {
+        
+            let newPin = NSEntityDescription.insertNewObjectForEntityForName("Pin", inManagedObjectContext: context) as! Pin
+            newPin.lat = newCoordinates.latitude
+            newPin.long = newCoordinates.longitude
+        
+            FlickrClient.sharedInstance().getFlickrImagesByLocation(newPin.lat as! Double, long: newPin.long as! Double, pin: newPin, page: 1, completion: { (result, error) -> () in
+                if let result = result {
+                } else {
+                print(error)
+                }
+            })
 
         appDelegate.saveContext()
-        
         self.setUpMapView()
+            
+        }
         
     }
     
     func setUpMapView() {
+        
         let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
         let context = appDelegate.managedObjectContext
         let fetchRequest = NSFetchRequest(entityName: "Pin")
         
         do {
             let results = try context.executeFetchRequest(fetchRequest)
-            pins = results as! [NSManagedObject]
+            pins = results as! [Pin]
         } catch let error as NSError {
             print("Could not fetch \(error), \(error.userInfo)")
         }
@@ -152,10 +167,12 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         let pin = view.annotation!
         
         if self.navItem.rightBarButtonItem!.style == UIBarButtonItemStyle.Done {
+            
             mapView.removeAnnotation(view.annotation!)
             deletePin(pin.coordinate.latitude, long: pin.coordinate.longitude)
             
         } else {
+            
             cv.lat = pin.coordinate.latitude
             cv.long = pin.coordinate.longitude
             cv.myTitle = pin.title!
@@ -166,6 +183,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     }
     
     func deletePin(lat: Double, long: Double) {
+        
         let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
         let context = appDelegate.managedObjectContext
         let fetchRequest = NSFetchRequest(entityName: "Pin")
@@ -184,15 +202,14 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         }
     }
     
-    override func viewWillDisappear(animated: Bool) {
+    func mapView(mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
         let defaults = NSUserDefaults.standardUserDefaults()
         let locationData = ["lat":myMapView.centerCoordinate.latitude
-            , "long":myMapView.centerCoordinate.longitude
-            , "latDelta":myMapView.region.span.latitudeDelta
-            , "longDelta":myMapView.region.span.longitudeDelta]
+                            , "long":myMapView.centerCoordinate.longitude
+                            , "latDelta":myMapView.region.span.latitudeDelta
+                            , "longDelta":myMapView.region.span.longitudeDelta]
         defaults.setObject(locationData, forKey: "location")
     }
-
 
 }
 

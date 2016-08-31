@@ -15,7 +15,7 @@ class Photo: NSManagedObject {
 // Insert code here to add functionality to your managed object subclass
     
     // Insert code here to add functionality to your managed object subclass
-    convenience init(image: NSData, context : NSManagedObjectContext) {
+    convenience init(image: NSData, imageURL: String, context : NSManagedObjectContext) {
         
         // An EntityDescription is an object that has access to all
         // the information you provided in the Entity part of the model
@@ -23,6 +23,7 @@ class Photo: NSManagedObject {
         if let ent = NSEntityDescription.entityForName("Photo", inManagedObjectContext: context) {
             self.init(entity: ent, insertIntoManagedObjectContext: context)
             self.image = image
+            self.imageURL = imageURL
         } else {
             fatalError("Unable to find Entity name!")
         }

@@ -12,27 +12,28 @@ import MapKit
 
 class CollectionViewController: UIViewController, MKMapViewDelegate, UICollectionViewDataSource, UICollectionViewDelegate {
     
+    var appDelegate: AppDelegate!
+    
     @IBOutlet weak var singlePointMapView: MKMapView!
     @IBOutlet weak var noImagesLabel: UILabel!
+    @IBOutlet weak var bottomButton: UIBarButtonItem!
+    @IBOutlet weak var collectionView: UICollectionView!
+    @IBOutlet weak var flowLayout: UICollectionViewFlowLayout!
     
     var lat: CLLocationDegrees?
     var long: CLLocationDegrees?
     var myTitle: String?
     var mySubtitle: String?
     
-    @IBOutlet weak var bottomButton: UIBarButtonItem!
-    
     var pins = [Pin]()
-    var imagesForPin = [NSManagedObject]()
+    var photosForPin = [Photo]()
     var correctPin = Pin?()
     var pageNumber = 1
     var indexPathsToDelete = [Int]()
     
-    @IBOutlet weak var collectionView: UICollectionView!
-    @IBOutlet weak var flowLayout: UICollectionViewFlowLayout!
-    
     override func viewDidLoad() {
         self.setUpMapView()
+        appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
         
         let space: CGFloat = 3.0
         let dimension = (UIScreen.mainScreen().bounds.width - (2 * space)) / 3.0
@@ -44,11 +45,12 @@ class CollectionViewController: UIViewController, MKMapViewDelegate, UICollectio
     
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
+        
         collectionView.backgroundColor = UIColor.whiteColor()
         noImagesLabel.hidden = true
         
         getCorrectPin(self.lat!, long: self.long!)
-        getImages()
+        getPhotoURLs()
         setUpCollectionView()
  
     }
@@ -58,17 +60,18 @@ class CollectionViewController: UIViewController, MKMapViewDelegate, UICollectio
     }
     
     func setUpCollectionView() {
-        if imagesForPin.count == 0 {
-            collectionView.hidden = true
+        if photosForPin.count == 0 {
             noImagesLabel.hidden = false
+            collectionView.hidden = true
         } else {
             noImagesLabel.hidden = true
-            collectionView?.reloadData()
             collectionView.hidden = false
+            collectionView?.reloadData()
         }
     }
     
     func getCorrectPin(lat: Double, long: Double) {
+        
         let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
         let context = appDelegate.managedObjectContext
         let fetchRequest = NSFetchRequest(entityName: "Pin")
@@ -87,7 +90,8 @@ class CollectionViewController: UIViewController, MKMapViewDelegate, UICollectio
         }
     }
     
-    func getImages() {
+    func getPhotoURLs() {
+        
         let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
         let context = appDelegate.managedObjectContext
         let fetchRequest = NSFetchRequest(entityName: "Photo")
@@ -96,15 +100,15 @@ class CollectionViewController: UIViewController, MKMapViewDelegate, UICollectio
             let p = NSPredicate(format: "photoToPin = %@", argumentArray: [correctPin])
             fetchRequest.predicate = p
         
-            imagesForPin = []
+            photosForPin = []
             do {
                 let results = try context.executeFetchRequest(fetchRequest)
-                imagesForPin = results as! [NSManagedObject]
+                photosForPin = results as! [Photo]
             } catch let error as NSError {
                 print("Could not fetch \(error), \(error.userInfo)")
             }
         } else {
-        print("Predicate didn't work")
+            print("Predicate didn't work")
         }
     }
 
@@ -132,7 +136,7 @@ class CollectionViewController: UIViewController, MKMapViewDelegate, UICollectio
         
         if pinView == nil {
             pinView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: reuseId)
-            pinView!.canShowCallout = true
+            pinView!.canShowCallout = false
             pinView!.pinTintColor = .redColor()
         } else {
             pinView!.annotation = annotation
@@ -142,29 +146,18 @@ class CollectionViewController: UIViewController, MKMapViewDelegate, UICollectio
     }
     
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return imagesForPin.count
+        return photosForPin.count
     }
     
-    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
-        
-        let cell = collectionView.dequeueReusableCellWithReuseIdentifier("Cell", forIndexPath: indexPath) as! CustomCell
-        cell.myImageView!.alpha = 1.0
-        
-        cell.activityIndicator.hidden = false
-        
-        if imagesForPin.count != 0 {
-            
-            if let photoData = imagesForPin[indexPath.row].valueForKey("image") {
-                cell.myImageView!.image = UIImage(data: photoData as! NSData)
-            }
-            
-        }
-        
-        return cell
+    func stopLoading(activityIndicator: UIActivityIndicatorView) {
+        activityIndicator.stopAnimating()
+        activityIndicator.hidden = true
     }
     
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+        
         let cell = collectionView.cellForItemAtIndexPath(indexPath) as! CustomCell
+        
         if cell.myImageView!.alpha < 1.0 {
             cell.myImageView!.alpha = 1.0
             let index = indexPathsToDelete.indexOf(indexPath.row)
@@ -188,39 +181,105 @@ class CollectionViewController: UIViewController, MKMapViewDelegate, UICollectio
         let context = appDelegate.managedObjectContext
         
         if bottomButton.title == "New Collection" {
-            if imagesForPin.count == 21 {
+            if photosForPin.count == 21 {
                 pageNumber += 1
             } else {
                 pageNumber = 1
-                self.collectionView.hidden = false
             }
-
-            for image in imagesForPin {
-                context.deleteObject(image as NSManagedObject)
+            
+            photosForPin.removeAll()
+            for photo in photosForPin {
+                context.deleteObject(photo)
             }
+            
             appDelegate.saveContext()
-            self.getImages()
-            self.collectionView.reloadData()
+ 
+            self.noImagesLabel.hidden = true
+            self.collectionView.hidden = true
+            
             FlickrClient.sharedInstance().getFlickrImagesByLocation(correctPin!.lat as! Double, long: correctPin!.long as! Double, pin: correctPin!, page: pageNumber, completion: { (result, error) -> () in
                 if let result = result {
-                    self.getImages()
+                    self.getPhotoURLs()
                     self.setUpCollectionView()
                 } else {
                     print(error)
                 }
             })
+            
         } else {
+            
             for i in indexPathsToDelete {
-                let photo = imagesForPin[i]
-                context.deleteObject(photo as NSManagedObject)
-                appDelegate.saveContext()
-                imagesForPin.removeAtIndex(i)
+                let photo = photosForPin[i]
+                context.deleteObject(photo)
+                photosForPin.removeAtIndex(i)
                 self.setUpCollectionView()
             }
+            
+            appDelegate.saveContext()
             bottomButton.title = "New Collection"
             indexPathsToDelete = []
+            
         }
-        
     }
+}
+
+extension CollectionViewController {
     
+    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
+        
+        let cell = collectionView.dequeueReusableCellWithReuseIdentifier("Cell", forIndexPath: indexPath) as! CustomCell
+        cell.activityIndicator.color = UIColor.whiteColor()
+        
+        if let imageData = photosForPin[indexPath.row].valueForKey("image") {
+            
+            cell.myImageView!.image = UIImage(data: imageData as! NSData)
+            self.stopLoading(cell.activityIndicator)
+            
+        } else if photosForPin.count != 0 {
+            
+            cell.myImageView!.alpha = 1.0
+            cell.myImageView.backgroundColor = UIColor.grayColor()
+            cell.myImageView.image = nil
+            cell.activityIndicator.hidden = false
+            cell.activityIndicator.startAnimating()
+
+            let urlString = photosForPin[indexPath.row].valueForKey("imageURL") as! String
+            
+            let url = NSURL(string: urlString)!
+            let request = NSURLRequest(URL: url)
+            let task = appDelegate.sharedSession.dataTaskWithRequest(request) { (data, response, error) in
+                
+                guard (error == nil) else {
+                    print("There was an error with your request: \(error)")
+                    self.stopLoading(cell.activityIndicator)
+                    return
+                }
+                
+                guard let statusCode = (response as? NSHTTPURLResponse)?.statusCode where statusCode >= 200 && statusCode <= 299 else {
+                    print("Your request returned a status code other than 2xx!")
+                    self.stopLoading(cell.activityIndicator)
+                    return
+                }
+                
+                guard let data = data else {
+                    print("No data was returned by the request!")
+                    self.stopLoading(cell.activityIndicator)
+                    return
+                }
+                
+                if let image = UIImage(data: data) {
+                    performUIUpdatesOnMain {
+                        cell.myImageView!.image = image
+                        self.photosForPin[indexPath.row].setValue(data, forKey: "image")
+                        self.appDelegate.saveContext()
+                        self.stopLoading(cell.activityIndicator)
+                    }
+                } else {
+                    print("Could not create image from \(data)")
+                }
+            }
+            task.resume()
+        }
+        return cell
+    }
 }

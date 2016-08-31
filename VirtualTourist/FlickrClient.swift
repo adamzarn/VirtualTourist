@@ -70,15 +70,10 @@ class FlickrClient: NSObject {
                         
                         for photo in photos {
                             let newPhoto = NSEntityDescription.insertNewObjectForEntityForName("Photo",inManagedObjectContext: context) as! Photo
-                            if let imageUrlString = photo[Constants.FlickrResponseKeys.MediumURL] as? String {
-                                let imageURL = NSURL(string: imageUrlString)
-                                if let imageData = NSData(contentsOfURL: imageURL!) {
-                                    newPhoto.image = imageData
-                                    newPhoto.photoToPin = pin
-                                }
+                                newPhoto.imageURL = photo[Constants.FlickrResponseKeys.MediumURL] as? String
+                                newPhoto.photoToPin = pin
                             }
                         completion(result: photos, error: nil)
-                    }
                 }
             }
         }

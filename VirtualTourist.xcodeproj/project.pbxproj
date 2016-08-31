@@ -46,6 +46,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		DB36BD1A1D77322500B573E9 /* VirtualTourist2.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = VirtualTourist2.xcdatamodel; sourceTree = "<group>"; };
+		DB36BD1B1D773CA400B573E9 /* VirtualTourist3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = VirtualTourist3.xcdatamodel; sourceTree = "<group>"; };
 		DB6531C41D6DF136005457B4 /* FlickrClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FlickrClient.swift; sourceTree = "<group>"; };
 		DB6531C61D6DF2A8005457B4 /* GCDBlackBox.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GCDBlackBox.swift; sourceTree = "<group>"; };
 		DB6531C81D6DFBDA005457B4 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
@@ -596,9 +598,11 @@
 		DBCAE6C71D6CC51200D1F6F0 /* VirtualTourist.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
+				DB36BD1B1D773CA400B573E9 /* VirtualTourist3.xcdatamodel */,
+				DB36BD1A1D77322500B573E9 /* VirtualTourist2.xcdatamodel */,
 				DBCAE6C81D6CC51200D1F6F0 /* VirtualTourist.xcdatamodel */,
 			);
-			currentVersion = DBCAE6C81D6CC51200D1F6F0 /* VirtualTourist.xcdatamodel */;
+			currentVersion = DB36BD1B1D773CA400B573E9 /* VirtualTourist3.xcdatamodel */;
 			path = VirtualTourist.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
